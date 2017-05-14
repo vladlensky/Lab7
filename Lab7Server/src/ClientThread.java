@@ -19,7 +19,6 @@ public class ClientThread extends Thread {
     private SocketChannel channel;
     private SelectionKey key;
     private BlockingQueue<Byte> requests;
-    private long currentMessageID;
     private boolean needData;
     private boolean isConnected;
     private ByteBuffer bb;
@@ -29,7 +28,6 @@ public class ClientThread extends Thread {
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
-        this.currentMessageID=-1;
         needData=false;
         isConnected=true;
         bb = ByteBuffer.allocate(512);
@@ -39,14 +37,12 @@ public class ClientThread extends Thread {
         this.message=message;
         this.channel = channel;
         this.key = key;
-        this.currentMessageID=message.getID();
         this.requests = new ArrayBlockingQueue<>(5);
         needData=false;
         isConnected=true;
         bb = ByteBuffer.allocate(512);
         gson = new Gson();
     }
-    public long getCurrentMessageID(){return currentMessageID;}
     public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
     }

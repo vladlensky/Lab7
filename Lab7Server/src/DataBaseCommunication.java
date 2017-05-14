@@ -38,8 +38,16 @@ public class DataBaseCommunication {
         return rowSet;
     }
     public void Update(Message message){
-        LinkedList<NormalHuman> NewData = message.getData();
+        try {
+            LinkedList<NormalHuman> NewData = message.getData();
+            if(message.getTypeOfOperation()==2)
+                registerQuery("update normalhuman set id = " + NewData.get(0).getId() + ", name = " + NewData.get(0).getName() + ", age = " + NewData.get(0).getAge() + ", troubleswiththelaw = " + NewData.get(0).getTroublesWithTheLaw() + " where id = " + NewData.get(0).getId() + ";" );
+            if(message.getTypeOfOperation()==1)
+                registerQuery("insert into normalhuman values (" + NewData.get(0).getId() + "," + NewData.get(0).getName() + "," + NewData.get(0).getAge() + "," + NewData.get(0).getTroublesWithTheLaw() + ");");
+            if(message.getTypeOfOperation()==0)
+                registerQuery("delete from normalhuman where id = " + NewData.get(0).getId() + ";");
 
+        }catch(SQLException e){e.printStackTrace();}
     }
     public CachedRowSet getRowSet(){
         return rowSet;
