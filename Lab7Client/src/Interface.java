@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.*;
@@ -40,13 +41,10 @@ public class Interface{
     private static ButtonsUnderTable but=null;
     private static ButtonsWithCommands bwc=null;
     private static CloseFrame cf = new CloseFrame(bwc);
-    public static void setIsChanged(boolean changed){
-        isChanged = changed;
-    }
-    public static Point getFrameLocation(){
-        return jf.getLocation();
-    }
+    public static void setIsChanged(boolean changed){isChanged = changed;}
+    public static Point getFrameLocation(){return jf.getLocation();}
     public synchronized static String getFile(){return file;}
+    public static Color getColor() {return color;}
     private static void colorChooser(){
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -342,6 +340,9 @@ public class Interface{
             coll = new LinkedList<>(message.getData());
             new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());
+        }catch(ConnectException e){
+            new Dialog("Нет подключения!Сервер отключён!",Interface.getColor());
+            System.exit(1);
         }catch(Exception e){
             e.printStackTrace();
         }

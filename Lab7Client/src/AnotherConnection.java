@@ -1,10 +1,12 @@
 import classes.NormalHuman;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import sun.awt.image.ImageWatched;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashSet;
 import java.util.LinkedList;
 
@@ -75,8 +77,10 @@ public class AnotherConnection extends Thread {
                     Interface.notEditable = new HashSet<>(message.getNotEditable());
                 }
             }
-        }catch (IOException e){
-            e.printStackTrace();
         }
+        catch(SocketException e) {
+            new Dialog("Разрыв соединения!Сервер отключён!",Interface.getColor());
+            System.exit(1);
+        }catch (IOException e){} catch(IllegalStateException e){}catch(JsonSyntaxException e){}
     }
 }

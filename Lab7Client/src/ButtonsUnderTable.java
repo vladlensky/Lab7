@@ -15,7 +15,6 @@ public class ButtonsUnderTable {
     private static Color c = null;
     private CollectTable collt;
     private JTable collections;
-    private JButton ok = new JButton("Ok");
     private LinkedList<NormalHuman> coll;
     private EditWindow ew = new EditWindow();
     private boolean openedShowWindow = false;
@@ -26,7 +25,6 @@ public class ButtonsUnderTable {
         c = col;
         ew.setColor(col);
         list.setForeground(c);
-        ok.setBackground(c);
     }
     ButtonsUnderTable(JTable table, CollectTable ct, LinkedList<NormalHuman> coll){
         collt=ct;
@@ -79,27 +77,7 @@ public class ButtonsUnderTable {
             });
         }
         else if((collections.getSelectedRow()!=-1&&!openedEditWindow) && (Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))){
-            JDialog dialog = new JDialog();
-            dialog.setLayout(null);
-            dialog.setLocationRelativeTo(null);
-            dialog.setModal(true);
-            JLabel label = new JLabel("Данный человек уже редактируется!!!");
-            label.setFont(new Font("Verdana", Font.BOLD, 12));
-            dialog.add(label);
-            label.setLocation(30,0);
-            label.setSize(300,50);
-            dialog.setSize(330, 140);
-            ok.setSize(80, 30);
-            ok.setLocation(120, 50);
-            ok.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    dialog.dispose();
-                }
-            });
-            dialog.add(ok);
-            dialog.isResizable();
-            dialog.setVisible(true);
+            new Dialog("Данный человек уже редактируется!!!",Interface.getColor());
         }
     }
     public void showThoughts(){
