@@ -30,12 +30,17 @@ public class ButtonsUnderTable {
         this.coll=coll;
     }
     public void delete(){
+        System.out.println("size: " + coll.size() + "\n"+coll);
+        System.out.println("trying get: " + collections.getSelectedRow());
         if(collections.getSelectedRow()!=-1){
-            Interface.setIsChanged(true);
+            Interface.message.getData().clear();
+            Interface.message.getData().add(
+                    coll.get(
+                            collections.getSelectedRow()));
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            Interface.message.setTypeOfOperation(Message.delete);
             coll.remove(collections.getSelectedRow());
             collt.removeData(collections.getSelectedRow());
-            Interface.message.setData(coll);
-            Interface.message.setState(ConnectionState.NEW_DATA);
             Interface.sendMessage();}
     }
     public void edit(){
@@ -44,19 +49,46 @@ public class ButtonsUnderTable {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
+                    int k = collections.getSelectedRow();
+                    if(Interface.getBlocking().contains(coll.get(k).getId()))
+                        return;
+                    Interface.message.setTypeOfOperation(Message.wait);
+                    Interface.message.getData().clear();
+                    Interface.message.getNotEditable().clear();
+                    Interface.message.getNotEditable().add(coll.get(k).getId());
+                    Interface.message.setState(ConnectionState.WAITING);
+                    Interface.sendMessage();
                     ew = new EditWindow("Edit Person",
-                            coll.get(collections.getSelectedRow()),
-                            collt, collections.getSelectedRow(),
+                            coll.get(k),
+                            collt, k,
                             new EditExit() {
                         @Override
                         public void doOnExit() {
+                            System.out.println("do on oxit0!");
+                            System.out.println(Interface.message.getNotEditable().get(0));
+                            System.out.println(coll.get(k).getId());
                             openedEditWindow = false;
+                            Interface.message.setTypeOfOperation(Message.wait);
+                            Interface.message.getData().clear();
+                            Interface.message.getNotEditable().clear();
+                            Interface.message.getNotEditable().add(coll.get(k).getId());
+                            Interface.message.setState(ConnectionState.REWAIT);
+                            Interface.sendMessage();
                         }
                     });
                     ew.addWindowListener(new WindowAdapter() {
                         @Override
                         public void windowClosing(WindowEvent e) {
+                            System.out.println("do on oxit!");
+                            System.out.println(Interface.message.getNotEditable().get(0));
+                            System.out.println(coll.get(k).getId());
                             openedEditWindow = false;
+                            Interface.message.setTypeOfOperation(Message.wait);
+                            Interface.message.getData().clear();
+                            Interface.message.getNotEditable().clear();
+                            Interface.message.getNotEditable().add(coll.get(k).getId());
+                            Interface.message.setState(ConnectionState.REWAIT);
+                            Interface.sendMessage();
                         }
                     });
                     ew.setLocation((int)Interface.getFrameLocation().getX()-320,(int)Interface.getFrameLocation().getY());

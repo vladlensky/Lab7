@@ -3,17 +3,15 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.util.*;
 import java.io.*;
 import java.util.List;
 import classes.*;
 import com.google.gson.Gson;
-import com.sun.org.apache.xpath.internal.SourceTree;
 import org.json.simple.*;
 
 public class Interface{
+    static Socket secondSocket;
     static DataOutputStream dos;
     static DataInputStream dis;
     static Socket socket;
@@ -21,8 +19,6 @@ public class Interface{
     static OutputStream socketOS;
     static Message message;
     static Gson gson;
-    static boolean connected=false;
-    private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
     private static JPanel paneld= new JPanel(null);
@@ -42,9 +38,9 @@ public class Interface{
     private static ButtonsUnderTable but=null;
     private static ButtonsWithCommands bwc=null;
     private static CloseFrame cf = new CloseFrame(bwc);
-    public static void setIsChanged(boolean changed){
-        isChanged = changed;
-    }
+    private static LinkedList<Integer> Blocking = new LinkedList<>();
+    public static void setBlocking(LinkedList<Integer> blocking) {Blocking = blocking;}
+    public static LinkedList<Integer> getBlocking() {return Blocking;}
     public static Point getFrameLocation(){
         return jf.getLocation();
     }
@@ -128,7 +124,6 @@ public class Interface{
         collections.getTableHeader().setReorderingAllowed(false);
         collections.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scroll = new JScrollPane(collections);
-        collections.setAutoCreateRowSorter(true);
         scroll.setPreferredSize(new Dimension(300,500));
         panelu.setLayout(new GridBagLayout());
         panelu.add(scroll,new GridBagConstraints(0,0,1,1,1,1,
@@ -155,14 +150,12 @@ public class Interface{
                 but.edit();
             }
         });
-
         collections.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount()==2 && e.getButton()==MouseEvent.BUTTON1) but.edit();
             }
         });
-
         doButton = new JButton("Do");
         doButton.setFont(new Font("Verdana", Font.BOLD, 14));
         dlm.addElement("Remove");
@@ -313,13 +306,14 @@ public class Interface{
             e.printStackTrace();
         }
     }
+
     public static void sendMessage(){
         try {
             String mesOut = gson.toJson(message);
-            byte sizeOut = (byte) Math.ceil((double) (mesOut.length() + 1) / (double) 512);
-            byte[] buf = new byte[mesOut.length() + 1];
+            byte sizeOut = (byte) Math.ceil((double) (mesOut.getBytes().length + 1) / (double) 512);
+            byte[] buf = new byte[mesOut.getBytes().length + 1];
             buf[0] = sizeOut;
-            System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.length());
+            System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.getBytes().length);
             dos.write(buf);
         }catch (IOException e){
             e.printStackTrace();
@@ -329,16 +323,19 @@ public class Interface{
         try {
             gson = new Gson();
             socket = new Socket(InetAddress.getLocalHost(), 1000);
+            secondSocket = new Socket(InetAddress.getLocalHost(), 1001);
             socketOS = socket.getOutputStream();
             socketIS = socket.getInputStream();
             dis = new DataInputStream(socketIS);
             dos = new DataOutputStream(socketOS);
             System.out.println("Потоки созданы");
             message = new Message(ConnectionState.NEED_DATA);
+            message.maxID=-10;
             message.clearData();
             sendMessage();
             getMessage();
-            coll = message.getData();
+            coll = new LinkedList<>(message.getData());
+            new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());
         }catch(Exception e){
             e.printStackTrace();

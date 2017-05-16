@@ -19,29 +19,31 @@ public class ClientThread extends Thread {
     private SocketChannel channel;
     private SelectionKey key;
     private BlockingQueue<Byte> requests;
-    private boolean needData;
     private boolean isConnected;
     private ByteBuffer bb;
     private Gson gson;
-    public ClientThread(SocketChannel channel , SelectionKey key){
-        message = new Message(ConnectionState.NEW_DATA);
+    private SecondConnection secondConnection;
+    private boolean isMineData;
+    public ClientThread(SocketChannel channel , SelectionKey key, SecondConnection secondConnection){
+        this.message = new Message(ConnectionState.NEW_DATA);
         this.channel=channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
-        needData=false;
-        isConnected=true;
-        bb = ByteBuffer.allocate(512);
-        gson = new Gson();
+        this.isConnected=true;
+        this.bb = ByteBuffer.allocate(512);
+        this.gson = new Gson();
+        this.isMineData=false;
+        this.secondConnection = secondConnection;
     }
     public ClientThread(Message message, SocketChannel channel, SelectionKey key){
         this.message=message;
         this.channel = channel;
         this.key = key;
         this.requests = new ArrayBlockingQueue<>(5);
-        needData=false;
-        isConnected=true;
-        bb = ByteBuffer.allocate(512);
-        gson = new Gson();
+        this.isConnected=true;
+        this.bb = ByteBuffer.allocate(512);
+        this.gson = new Gson();
+        this.isMineData=false;
     }
     public void makeRequest(byte i) throws InterruptedException{
         requests.put(i);
@@ -72,6 +74,14 @@ public class ClientThread extends Thread {
                             System.out.println("In NEW_DATA");
                             update();
                             break;
+                        case ConnectionState.WAITING:
+                            System.out.println("IN WAITING");
+                            waiting();
+                            break;
+                        case ConnectionState.REWAIT:
+                            System.out.println("IN REWAITING");
+                            rewaiting();
+                            break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
                             break;
@@ -84,9 +94,26 @@ public class ClientThread extends Thread {
             e.printStackTrace();
         }
     }
+    private void rewaiting(){
+        Main.notEditable.removeAll(message.getNotEditable());
+        synchronized (message){
+            Main.threadHandler.sendMessage(message, secondConnection);
+        }
+    }
+    private void waiting(){
+        Main.notEditable.addAll(message.getNotEditable());
+        message.setNotEditable(Main.notEditable);
+        synchronized (message){
+            Main.threadHandler.sendMessage(message, secondConnection);
+        }
+    }
     private void update(){
         try{
-            Main.getDbc().Update(message);
+            Main.getDbc().update(message);
+            synchronized (message){
+                    Main.threadHandler.sendMessage(message, secondConnection);
+            }
+            key.interestOps(SelectionKey.OP_READ);
         }catch(Exception e){e.printStackTrace();}
     }
     private void read(){
@@ -114,6 +141,8 @@ public class ClientThread extends Thread {
             makeRequest(message.getState());
             System.out.println(requests.size());
             System.out.println("Запрос сделан");
+            if(message.maxID!=-10)
+                Main.maxID=message.maxID;
             key.interestOps(SelectionKey.OP_WRITE);
         }catch (Exception e){
             e.printStackTrace();
@@ -124,6 +153,9 @@ public class ClientThread extends Thread {
             channel.close();
             key.cancel();
             isConnected=false;
+            synchronized (Main.threadHandler) {
+                Main.threadHandler.removeConnection(secondConnection);
+            }
             requests.put(ConnectionState.FINAL_ITERATE);
             System.out.println("Disconnected");
         }catch (Exception e){
@@ -132,12 +164,15 @@ public class ClientThread extends Thread {
     }
     private void sendData() throws SQLException, IOException, KarlsonNameException{
             LinkedList<NormalHuman> list = new LinkedList<>();
+            Main.normalHumans = Main.getDbc().registerQueryAndGetRowSet("select * from normalhuman;");
+            Main.thoughts = Main.getDbc().registerQueryAndGetRowSet("select * from thoughts;");
             while (Main.normalHumans.next()) {
                 NormalHuman nh = new NormalHuman();
                 nh.setName(Main.normalHumans.getString("name"));
                 nh.setAge(Main.normalHumans.getLong("age"));
                 nh.setTroublesWithTheLaw(Main.normalHumans.getBoolean("troublesWithTheLaw"));
                 nh.setId(Main.normalHumans.getInt("id"));
+                System.out.println(Main.normalHumans.getInt("id"));
                 while (Main.thoughts.next()) {
                     if (Main.normalHumans.getInt("id") == Main.thoughts.getInt("id"))
                         nh.thinkAbout(Main.thoughts.getString("thought"));
@@ -149,10 +184,9 @@ public class ClientThread extends Thread {
             Main.normalHumans.beforeFirst();
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
+            message.maxID=Main.maxID;
             String mes = gson.toJson(message);
-           /* ByteBuffer buf = ByteBuffer.allocate(mes.getBytes().length + 1);
-            buf.put((byte)mes.getBytes().length);
-            buf.put(mes.getBytes());*/
+            System.out.println(mes);
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());
             channel.write(buf);
             key.interestOps(SelectionKey.OP_READ);

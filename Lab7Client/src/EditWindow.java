@@ -4,6 +4,7 @@
 /**
  * Created by Mugenor on 14.04.2017.
  */
+import classes.Karlson;
 import classes.KarlsonNameException;
 import classes.NormalHuman;
 
@@ -43,6 +44,7 @@ public class EditWindow extends JFrame {
     private JTextField tf = ((JSpinner.DefaultEditor) spin.getEditor()).getTextField();
     private JLabel excNameLabel= new JLabel();
     private JLabel excAgeLabel = new JLabel();
+    private JLabel excThoughtLabel = new JLabel();
     public EditWindow(){}
     public EditWindow(String name, CollectTable collections, LinkedList<NormalHuman> linkedList , EditExit ee){
         setTitle(name);
@@ -52,7 +54,6 @@ public class EditWindow extends JFrame {
                 nh.setName("SetName");
             } catch (KarlsonNameException e) {
             }
-
             init();
             setExitOpereation(ee);
     }
@@ -172,6 +173,11 @@ public class EditWindow extends JFrame {
         excNameLabel.setSize(500,30);
         excNameLabel.setFont(new Font("Verdana", Font.BOLD, 13));
         panel.add(excNameLabel);
+        excThoughtLabel.setForeground(Color.RED);
+        excThoughtLabel.setLocation(28,60);
+        excThoughtLabel.setSize(500,30);
+        excThoughtLabel.setFont(new Font("Verdana", Font.BOLD, 13));
+        panel.add(excThoughtLabel);
         panel.add(True);
         panel.add(name);
         panel.add(False);
@@ -191,7 +197,7 @@ public class EditWindow extends JFrame {
         setVisible(true);
     }
     private void addThought(){
-        if(!thoughtsField.getText().equals("")){
+        if(!thoughtsField.getText().trim().equals("")){
             nh.thinkAbout(thoughtsField.getText());
             dlm.addElement(nh.getThoughts(nh.getThoughtsCount()-1));
         }
@@ -207,20 +213,37 @@ public class EditWindow extends JFrame {
             excAgeLabel.setText("");
             return;
         }
-        try{
+        try{Pattern pattern = Pattern.compile("[а-я]");
+            Matcher matcher = pattern.matcher(field.getText());
+            if(matcher.find()) throw new KarlsonNameException("rus");
+            pattern = Pattern.compile("[А-Я]");
+            matcher = pattern.matcher(field.getText());
+            if(matcher.find()) throw new KarlsonNameException("rus");
             if(field.getText().equals("")) throw new KarlsonNameException("empty");
             nh.setName(field.getText());
             nh.setAge(snm.getNumber().longValue());
             nh.setTroublesWithTheLaw(True.isSelected());
-            if(numberRow==(-1)) {collections.addData(nh);
-                linkedList.add(nh);}
-            else
+            Interface.message.getData().clear();
+            Interface.message.getData().add(nh);
+            if(numberRow==(-1)) {
+                Interface.message.maxID++;
+                nh.setId(Interface.message.maxID);
+                collections.addData(nh);
+                linkedList.add(nh);
+                Interface.message.setTypeOfOperation(Message.add);}
+            else {
                 collections.editData(nh, numberRow);
+                Interface.message.setTypeOfOperation(Message.change);
+            }
             ee.doOnExit();
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            System.out.println(Interface.message);
+            Interface.sendMessage();
             dispose();
         }catch(KarlsonNameException exc){
             if(exc.getMessage().equals("empty"))excNameLabel.setText("Write name of NormalHuman");
-                else excNameLabel.setText("NormalHuman can't be Karlson");
+                else if(exc.getMessage().equals("rus")) excNameLabel.setText("Not russian characters");
+                    else excNameLabel.setText("NormalHuman can't be Karlson");
             panel.updateUI();
         }
     }
@@ -238,7 +261,6 @@ public class EditWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 exit(ee);
-                Interface.setIsChanged(true);
             }
         });
 
@@ -263,7 +285,17 @@ public class EditWindow extends JFrame {
         thoughtsField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                addThought();
+                Pattern pattern = Pattern.compile("[а-я]");
+                Matcher matcher = pattern.matcher(thoughtsField.getText());
+                if(!matcher.find()){
+                    pattern = Pattern.compile("[А-Я]");
+                    matcher = pattern.matcher(thoughtsField.getText());
+                    if(!matcher.find()) {
+                        addThought();
+                        excThoughtLabel.setText("");
+                    }
+                    else excThoughtLabel.setText("Not russian characters");
+                } else excThoughtLabel.setText("Not russian characters");
             }
         });
         Del.addActionListener(new ActionListener() {
@@ -275,7 +307,17 @@ public class EditWindow extends JFrame {
         Add.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                addThought();
+                Pattern pattern = Pattern.compile("[а-я]");
+                Matcher matcher = pattern.matcher(thoughtsField.getText());
+                if(!matcher.find()){
+                    pattern = Pattern.compile("[А-Я]");
+                    matcher = pattern.matcher(thoughtsField.getText());
+                    if(!matcher.find()) {
+                        addThought();
+                        excThoughtLabel.setText("");
+                    }
+                    else excThoughtLabel.setText("Not russian characters");
+                } else excThoughtLabel.setText("Not russian characters");
             }
         });
         list.addKeyListener(new KeyAdapter() {

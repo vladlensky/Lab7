@@ -11,4 +11,5 @@ public class ConnectionState implements Serializable {
     public static final byte NEED_DATA=23;
     public static final byte FINAL_ITERATE=-1;
     public static final byte READ=24;
+    public static final byte REWAIT=19;
 }
