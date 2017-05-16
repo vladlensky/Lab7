@@ -302,7 +302,6 @@ public class Interface{
             while (dis.available() != 0) {
                 mesIn.append((char) dis.read());
             }
-            System.out.println(mesIn);
             message = gson.fromJson(mesIn.toString(), Message.class);
         }catch (IOException e){
             e.printStackTrace();
@@ -318,7 +317,7 @@ public class Interface{
             System.arraycopy(mesOut.getBytes(), 0, buf, 1, mesOut.getBytes().length);
             dos.write(buf);
         }catch (IOException e){
-            e.printStackTrace();
+
         }
     }
     public static void main(String[] args){
@@ -330,7 +329,6 @@ public class Interface{
             socketIS = socket.getInputStream();
             dis = new DataInputStream(socketIS);
             dos = new DataOutputStream(socketOS);
-            System.out.println("Потоки созданы");
             message = new Message(ConnectionState.NEED_DATA);
             message.maxID=-10;
             message.clearData();

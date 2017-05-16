@@ -77,7 +77,7 @@ public class ButtonsWithCommands {
                         public void actionPerformed(ActionEvent e) {
                             String s = tf.getText();
                             try{NormalHuman nh=Interface.StringToObject(s);
-                                if(coll.indexOf(nh)!=-1){
+                                if(coll.indexOf(nh)!=-1&& !Interface.notEditable.contains(nh.getId())){
                                 collt.removeData(coll.indexOf(nh));
                                 System.out.println(collt);
                                 Interface.setIsChanged(true);
@@ -89,7 +89,10 @@ public class ButtonsWithCommands {
                                 Interface.message.setState(ConnectionState.NEW_DATA);
                                 Interface.sendMessage();
                                 jf.dispose();
-                                openedRemoveWindow=false;} else throw new ArrayIndexOutOfBoundsException();}
+                                openedRemoveWindow=false;}
+                                else if(coll.indexOf(nh)!=-1&& Interface.notEditable.contains(nh.getId()))
+                                    new Dialog("Данный человек ещё редактируется!!!",Interface.getColor());
+                            }
                             catch (NullPointerException | KarlsonNameException exc){
                                 alabel.setText("Wrong NormalHuman!");
                             }

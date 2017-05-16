@@ -37,7 +37,20 @@ public class AnotherConnection extends Thread {
                 }
                 System.out.println(mesIn);
                 message = gson.fromJson(mesIn.toString(), Message.class);
-                if(message.getTypeOfOperation() == Message.add){
+                if(message.getState() == ConnectionState.NEW_DATA){
+                    synchronized (list) {
+                        synchronized (collt) {
+                            Interface.notEditable = message.getNotEditable();
+                            list = new LinkedList<>(message.getData());
+                            collt.removeAll();
+                            for (int i = 0; i < list.size(); i++) {
+                                String[] obj = {list.get(i).getName(), list.get(i).getAge().toString(), list.get(i).getTroublesWithTheLaw().toString()};
+                                collt.addData(obj);
+                            }
+                        }
+                    }
+                }
+                else if(message.getTypeOfOperation() == Message.add){
                     synchronized (list){
                         synchronized (collt){
                             list.add(message.getData().get(0));
