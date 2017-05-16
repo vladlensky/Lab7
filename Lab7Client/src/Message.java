@@ -1,6 +1,7 @@
 import classes.NormalHuman;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
@@ -10,15 +11,13 @@ public class Message implements Serializable {
     protected static final long serialVersionUID = 42L;
     private byte state;
     private LinkedList<NormalHuman> data;
-    private LinkedList<Integer> notEditable = new LinkedList<>();
+    private HashSet<Integer> notEditable;
     private byte typeOfOperation;
     public int maxID;
     public static final byte delete = 0;
     public static final byte add = 1;
     public static final byte change = 2;
-    public static final byte wait = 3;
-    public LinkedList<Integer> getNotEditable() {return notEditable;}
-    public void setNotEditable(LinkedList<Integer> notEditable) {this.notEditable = notEditable;}
+    public static final byte notEdit = 3;
     public void setTypeOfOperation(byte typeOfOperation) {this.typeOfOperation = typeOfOperation;}
     public byte getTypeOfOperation() {return typeOfOperation;}
     public Message(Message message){
@@ -26,6 +25,7 @@ public class Message implements Serializable {
         this.data = new LinkedList<>(message.getData());
         this.typeOfOperation = message.getTypeOfOperation();
         this.maxID = message.maxID;
+        notEditable = new HashSet<>();
     }
     public Message(byte state, LinkedList<NormalHuman> data){
         this.state=state;
@@ -49,4 +49,10 @@ public class Message implements Serializable {
     }
     public void clearData(){data=null;}
     public boolean isData(){return data!=null;}
+    public HashSet<Integer> getNotEditable(){
+        return notEditable;
+    }
+    public void reinitialize(HashSet<Integer> notEditable){
+        this.notEditable = new HashSet<>(notEditable);
+    }
 }

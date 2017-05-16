@@ -15,6 +15,10 @@ import java.util.concurrent.Executors;
 import classes.NormalHuman;
 import org.postgresql.ds.*;
 import javax.sql.rowset.CachedRowSet;
+
+/**
+ * Created by Mugenor on 05.05.2017.
+ */
 public class Main {
     private static final String url = "jdbc:postgresql://localhost:2345/lab7";
     private static final String username="postgres";
@@ -23,7 +27,7 @@ public class Main {
     private static InetAddress host;
     private static DataBaseCommunication dbc;
     private static Selector selector;
-    static LinkedList<Integer> notEditable = new LinkedList<>();
+    static HashSet<Integer> notEditable = new HashSet<>();
     static SecondThreadHandler threadHandler;
     static ServerSocket secondServerSocket;
     static int maxID=-1;

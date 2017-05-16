@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.concurrent.*;
 
@@ -74,14 +75,6 @@ public class ClientThread extends Thread {
                             System.out.println("In NEW_DATA");
                             update();
                             break;
-                        case ConnectionState.WAITING:
-                            System.out.println("IN WAITING");
-                            waiting();
-                            break;
-                        case ConnectionState.REWAIT:
-                            System.out.println("IN REWAITING");
-                            rewaiting();
-                            break;
                         case ConnectionState.DISCONNECT:
                             disconnect();
                             break;
@@ -94,24 +87,17 @@ public class ClientThread extends Thread {
             e.printStackTrace();
         }
     }
-    private void rewaiting(){
-        Main.notEditable.removeAll(message.getNotEditable());
-        synchronized (message){
-            Main.threadHandler.sendMessage(message, secondConnection);
-        }
-    }
-    private void waiting(){
-        Main.notEditable.addAll(message.getNotEditable());
-        message.setNotEditable(Main.notEditable);
-        synchronized (message){
-            Main.threadHandler.sendMessage(message, secondConnection);
-        }
-    }
     private void update(){
         try{
-            Main.getDbc().update(message);
+            if(message.getTypeOfOperation()!=Message.notEdit) {
+                if(message.getTypeOfOperation() == Message.change)
+                    Main.notEditable = new HashSet<>(message.getNotEditable());
+                Main.getDbc().update(message);
+            } else Main.notEditable = new HashSet<>(message.getNotEditable());
             synchronized (message){
+                synchronized (secondConnection) {
                     Main.threadHandler.sendMessage(message, secondConnection);
+                }
             }
             key.interestOps(SelectionKey.OP_READ);
         }catch(Exception e){e.printStackTrace();}
@@ -172,7 +158,6 @@ public class ClientThread extends Thread {
                 nh.setAge(Main.normalHumans.getLong("age"));
                 nh.setTroublesWithTheLaw(Main.normalHumans.getBoolean("troublesWithTheLaw"));
                 nh.setId(Main.normalHumans.getInt("id"));
-                System.out.println(Main.normalHumans.getInt("id"));
                 while (Main.thoughts.next()) {
                     if (Main.normalHumans.getInt("id") == Main.thoughts.getInt("id"))
                         nh.thinkAbout(Main.thoughts.getString("thought"));
@@ -185,6 +170,7 @@ public class ClientThread extends Thread {
             message.setState(ConnectionState.NEW_DATA);
             message.setData(list);
             message.maxID=Main.maxID;
+            message.reinitialize(Main.notEditable);
             String mes = gson.toJson(message);
             System.out.println(mes);
             ByteBuffer buf = ByteBuffer.wrap(mes.getBytes());

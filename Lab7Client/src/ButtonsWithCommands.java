@@ -80,6 +80,7 @@ public class ButtonsWithCommands {
                                 if(coll.indexOf(nh)!=-1){
                                 collt.removeData(coll.indexOf(nh));
                                 System.out.println(collt);
+                                Interface.setIsChanged(true);
                                 coll.remove(nh);
                                 System.out.println(coll);
                                 Interface.message.getData().clear();
@@ -190,6 +191,7 @@ public class ButtonsWithCommands {
                         coll.add(nh);
                         System.out.println("New coll: " + coll);
                         System.out.println(coll.indexOf(nh)+ " of " + coll.size()+": " + nh);
+                        Interface.setIsChanged(true);
                         openedAddJsonWindow = false;
                         Interface.message.getData().clear();
                         Interface.message.getData().add(nh);

@@ -54,6 +54,7 @@ public class EditWindow extends JFrame {
                 nh.setName("SetName");
             } catch (KarlsonNameException e) {
             }
+
             init();
             setExitOpereation(ee);
     }
@@ -233,11 +234,12 @@ public class EditWindow extends JFrame {
                 Interface.message.setTypeOfOperation(Message.add);}
             else {
                 collections.editData(nh, numberRow);
+                Interface.notEditable.remove(nh.getId());
                 Interface.message.setTypeOfOperation(Message.change);
+                Interface.message.reinitialize(Interface.notEditable);
             }
             ee.doOnExit();
             Interface.message.setState(ConnectionState.NEW_DATA);
-            System.out.println(Interface.message);
             Interface.sendMessage();
             dispose();
         }catch(KarlsonNameException exc){
@@ -261,6 +263,7 @@ public class EditWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 exit(ee);
+                Interface.setIsChanged(true);
             }
         });
 
@@ -273,9 +276,30 @@ public class EditWindow extends JFrame {
             }
         });
 
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if(numberRow!=-1) {
+                    Interface.notEditable.remove(Interface.coll.get(numberRow).getId());
+                    Interface.message.getData().clear();
+                    Interface.message.reinitialize(Interface.notEditable);
+                    Interface.message.setTypeOfOperation(Message.notEdit);
+                    Interface.message.setState(ConnectionState.NEW_DATA);
+                    Interface.sendMessage();
+                }
+            }
+        });
         canc.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if(numberRow!=-1) {
+                    Interface.notEditable.remove(Interface.coll.get(numberRow).getId());
+                    Interface.message.getData().clear();
+                    Interface.message.reinitialize(Interface.notEditable);
+                    Interface.message.setTypeOfOperation(Message.notEdit);
+                    Interface.message.setState(ConnectionState.NEW_DATA);
+                    Interface.sendMessage();
+                }
                 ew.dispose();
                 ee.doOnExit();
             }

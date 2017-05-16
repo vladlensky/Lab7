@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import org.json.simple.*;
 
 public class Interface{
+    static HashSet<Integer> notEditable;
     static Socket secondSocket;
     static DataOutputStream dos;
     static DataInputStream dis;
@@ -19,6 +20,7 @@ public class Interface{
     static OutputStream socketOS;
     static Message message;
     static Gson gson;
+    private static boolean isChanged = false;
     private static JFrame jf = new JFrame();
     private static JPanel panelu = new JPanel();
     private static JPanel paneld= new JPanel(null);
@@ -29,18 +31,18 @@ public class Interface{
     private static String file="";
     private static Color color=null;
     private static JButton colorChooserButton = new JButton("Choose color!");
-    private static LinkedList<NormalHuman> coll =null;
+    static LinkedList<NormalHuman> coll =null;
     private static DefaultListModel<String> dlm= new DefaultListModel<>();
     private static JList<String> listCommands = new JList<>(dlm);
     private static JButton doButton;
     private static CollectTable collt = new CollectTable();
-    private static JTable collections = new JTable(collt);
+    static JTable collections = new JTable(collt);
     private static ButtonsUnderTable but=null;
     private static ButtonsWithCommands bwc=null;
     private static CloseFrame cf = new CloseFrame(bwc);
-    private static LinkedList<Integer> Blocking = new LinkedList<>();
-    public static void setBlocking(LinkedList<Integer> blocking) {Blocking = blocking;}
-    public static LinkedList<Integer> getBlocking() {return Blocking;}
+    public static void setIsChanged(boolean changed){
+        isChanged = changed;
+    }
     public static Point getFrameLocation(){
         return jf.getLocation();
     }
@@ -150,12 +152,14 @@ public class Interface{
                 but.edit();
             }
         });
+
         collections.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(e.getClickCount()==2 && e.getButton()==MouseEvent.BUTTON1) but.edit();
             }
         });
+
         doButton = new JButton("Do");
         doButton.setFont(new Font("Verdana", Font.BOLD, 14));
         dlm.addElement("Remove");
@@ -334,6 +338,7 @@ public class Interface{
             message.clearData();
             sendMessage();
             getMessage();
+            notEditable = message.getNotEditable();
             coll = new LinkedList<>(message.getData());
             new AnotherConnection(secondSocket, coll, collt).start();
             SwingUtilities.invokeLater(() -> new Interface());

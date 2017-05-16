@@ -2,6 +2,8 @@ import classes.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.*;
@@ -13,6 +15,7 @@ public class ButtonsUnderTable {
     private static Color c = null;
     private CollectTable collt;
     private JTable collections;
+    private JButton ok = new JButton("Ok");
     private LinkedList<NormalHuman> coll;
     private EditWindow ew = new EditWindow();
     private boolean openedShowWindow = false;
@@ -23,6 +26,7 @@ public class ButtonsUnderTable {
         c = col;
         ew.setColor(col);
         list.setForeground(c);
+        ok.setBackground(c);
     }
     ButtonsUnderTable(JTable table, CollectTable ct, LinkedList<NormalHuman> coll){
         collt=ct;
@@ -30,9 +34,8 @@ public class ButtonsUnderTable {
         this.coll=coll;
     }
     public void delete(){
-        System.out.println("size: " + coll.size() + "\n"+coll);
-        System.out.println("trying get: " + collections.getSelectedRow());
-        if(collections.getSelectedRow()!=-1){
+        if(collections.getSelectedRow()!=-1 && !Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId())){
+            Interface.setIsChanged(true);
             Interface.message.getData().clear();
             Interface.message.getData().add(
                     coll.get(
@@ -44,56 +47,59 @@ public class ButtonsUnderTable {
             Interface.sendMessage();}
     }
     public void edit(){
-        if(collections.getSelectedRow()!=-1&&!openedEditWindow) {
+        if((collections.getSelectedRow()!=-1&&!openedEditWindow) && !(Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))) {
             openedEditWindow=true;
+            Interface.notEditable.add(coll.get(collections.getSelectedRow()).getId());
+            Interface.message.getData().clear();
+            Interface.message.reinitialize(Interface.notEditable);
+            Interface.message.setTypeOfOperation(Message.notEdit);
+            Interface.message.setState(ConnectionState.NEW_DATA);
+            Interface.sendMessage();
+            System.out.println(Interface.notEditable);
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    int k = collections.getSelectedRow();
-                    if(Interface.getBlocking().contains(coll.get(k).getId()))
-                        return;
-                    Interface.message.setTypeOfOperation(Message.wait);
-                    Interface.message.getData().clear();
-                    Interface.message.getNotEditable().clear();
-                    Interface.message.getNotEditable().add(coll.get(k).getId());
-                    Interface.message.setState(ConnectionState.WAITING);
-                    Interface.sendMessage();
                     ew = new EditWindow("Edit Person",
-                            coll.get(k),
-                            collt, k,
+                            coll.get(collections.getSelectedRow()),
+                            collt, collections.getSelectedRow(),
                             new EditExit() {
                         @Override
                         public void doOnExit() {
-                            System.out.println("do on oxit0!");
-                            System.out.println(Interface.message.getNotEditable().get(0));
-                            System.out.println(coll.get(k).getId());
                             openedEditWindow = false;
-                            Interface.message.setTypeOfOperation(Message.wait);
-                            Interface.message.getData().clear();
-                            Interface.message.getNotEditable().clear();
-                            Interface.message.getNotEditable().add(coll.get(k).getId());
-                            Interface.message.setState(ConnectionState.REWAIT);
-                            Interface.sendMessage();
                         }
                     });
                     ew.addWindowListener(new WindowAdapter() {
                         @Override
                         public void windowClosing(WindowEvent e) {
-                            System.out.println("do on oxit!");
-                            System.out.println(Interface.message.getNotEditable().get(0));
-                            System.out.println(coll.get(k).getId());
                             openedEditWindow = false;
-                            Interface.message.setTypeOfOperation(Message.wait);
-                            Interface.message.getData().clear();
-                            Interface.message.getNotEditable().clear();
-                            Interface.message.getNotEditable().add(coll.get(k).getId());
-                            Interface.message.setState(ConnectionState.REWAIT);
-                            Interface.sendMessage();
                         }
                     });
                     ew.setLocation((int)Interface.getFrameLocation().getX()-320,(int)Interface.getFrameLocation().getY());
                 }
             });
+        }
+        else if((collections.getSelectedRow()!=-1&&!openedEditWindow) && (Interface.notEditable.contains(coll.get(collections.getSelectedRow()).getId()))){
+            JDialog dialog = new JDialog();
+            dialog.setLayout(null);
+            dialog.setLocationRelativeTo(null);
+            dialog.setModal(true);
+            JLabel label = new JLabel("Данный человек уже редактируется!!!");
+            label.setFont(new Font("Verdana", Font.BOLD, 12));
+            dialog.add(label);
+            label.setLocation(30,0);
+            label.setSize(300,50);
+            dialog.setSize(330, 140);
+            ok.setSize(80, 30);
+            ok.setLocation(120, 50);
+            ok.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dialog.dispose();
+                }
+            });
+            dialog.add(ok);
+            dialog.isResizable();
+            dialog.setVisible(true);
         }
     }
     public void showThoughts(){
